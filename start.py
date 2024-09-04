@@ -1,8 +1,10 @@
 
 from discord.ext import commands
 from processing import on_bot_start_command
+from better_profanity import profanity
+import discord
 
-class BaseAI(commands.Cog):
+class StartAI(commands.Cog):
     store_data = {}
 
     def __init__(self, bot):
@@ -11,7 +13,8 @@ class BaseAI(commands.Cog):
 
     @commands.command(name="start")
     async def start(self, ctx):
-        await ctx.send("Hello World!")
+        embed = discord.Embed(title="Starting bot", description="Starting bot", color=0x00ff00)
+        await ctx.send(embed=embed)
         if not self.is_started:
             self.is_started = True
             await on_bot_start_command(ctx)
@@ -24,11 +27,13 @@ class BaseAI(commands.Cog):
             return
         if message.author == self.bot.user:
             return
-        if message.author.id not in BaseAI.store_data:
-            BaseAI.store_data[message.author.id] = "Message: " + message.content
+        if message.author.id not in StartAI.store_data:
+            message.content = profanity.censor(message.content)
+            StartAI.store_data[message.author.id] = "Message: " + message.content
         else:
-            BaseAI.store_data[message.author.id] = BaseAI.store_data[message.author.id] + ", Message: " + message.content
-        print(BaseAI.store_data)
+            message.content = profanity.censor(message.content)
+            StartAI.store_data[message.author.id] = StartAI.store_data[message.author.id] + ", Message: " + message.content
+        print(StartAI.store_data)
 
     @classmethod
     def get_data(cls):
@@ -39,4 +44,4 @@ class BaseAI(commands.Cog):
         cls.store_data = {}
         
 async def setup(bot):
-    await bot.add_cog(BaseAI(bot))
+    await bot.add_cog(StartAI(bot))

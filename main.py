@@ -23,5 +23,5 @@ async def on_ready() -> None:
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(bot.load_extension('base')) 
+    loop.run_until_complete(bot.load_extension("start"))
     loop.run_until_complete(bot.run(TOKEN))
