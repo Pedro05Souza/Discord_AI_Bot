@@ -14,8 +14,11 @@ async def on_bot_start_command(ctx: Context) -> None:
         data = StartAI.get_data()
         if data:
             response = executor.submit(generate_ai_response, data).result()
-            dict_users = await parse_ai_response(response)
-            await generate_ai_actions(dict_users, ctx)
+            try:
+                dict_users = await parse_ai_response(response)
+                await generate_ai_actions(dict_users, ctx)
+            except Exception as e:
+                raise AIParseError(f"Error parsing AI response: {e}")
             StartAI.clear_data()
 
 def generate_ai_response(message_data: dict) -> str:
@@ -27,9 +30,10 @@ def generate_ai_response(message_data: dict) -> str:
         completion = client.chat.completions.create(
         model="lmstudio-community/Meta-Llama-3-8B-Instruct-GGUF",
         messages=[
-            {"role": "system", "content": "Please respond ONLY the user_id and a number between 0-10 for each user, the" +
+            {"role": "system", "content": "Please respond ONLY the user_id, a number between 0-10 for each user. the" +
             "higher the number the more disrepectful the user was, if more than one message give the average number of the messages. If more than one user, separate the responses with a comma. Only give integer numbers." +
-            "Example: 668666843900149791: 5, \n 856676215007346730: 3. If the message comes with asterisks it means the user said a bad word."},
+            "If the message comes with asterisks it means the user said a bad word, but reply anyways." +
+            " Example: 668666843900149791: 5\n 856676215007346730: 3. Always follow this format. [USER_ID: NUMBER]"},
             {"role": "user", "content": message_data}
         ],
         temperature=0.2,
@@ -42,17 +46,14 @@ def generate_ai_response(message_data: dict) -> str:
 
 async def parse_ai_response(response: str) -> dict:
     """Parses the ai response and returns a dictionary"""
-    try:
-        response = response.split(",")
-        dict_users = {}
-        for user in response:
-            user = user.split(":")
-            dict_users[user[0]] = int(user[1]) * 10
-        return dict_users
-    except Exception as e:
-        raise AIParseError(f"Error parsing AI response: {e}")
+    response = response.split(",")
+    dict_users = {}
+    for user in response:
+        user = user.split(":")
+        dict_users[user[0]] = [int(user[1]) * 10]
+    return dict_users
     
 async def generate_ai_actions(users: dict, ctx: Context) -> None:
     for user in users.keys():
-        user = Action(ctx.guild.get_member(int(user)), ctx, users[user])
-        print(user)
+        user = Action(ctx.guild.get_member(int(user)), ctx, users[user][0])
+        await user.get_random_action()

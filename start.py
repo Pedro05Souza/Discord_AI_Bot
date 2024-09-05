@@ -1,8 +1,8 @@
 
 from discord.ext import commands
 from processing import on_bot_start_command
+from sharedfuncs import send_bot_embed
 from better_profanity import profanity
-import discord
 
 class StartAI(commands.Cog):
     store_data = {}
@@ -13,13 +13,12 @@ class StartAI(commands.Cog):
 
     @commands.command(name="start")
     async def start(self, ctx):
-        embed = discord.Embed(title="Starting bot", description="Starting bot", color=0x00ff00)
-        await ctx.send(embed=embed)
+        await send_bot_embed(ctx, description="Starting AI...")
         if not self.is_started:
             self.is_started = True
             await on_bot_start_command(ctx)
         else:
-            await ctx.send("Bot is already started")
+            await send_bot_embed(ctx, description="AI is already started.")
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -33,7 +32,11 @@ class StartAI(commands.Cog):
         else:
             message.content = profanity.censor(message.content)
             StartAI.store_data[message.author.id] = StartAI.store_data[message.author.id] + ", Message: " + message.content
-        print(StartAI.store_data)
+
+    @commands.Cog.listener()
+    async def on_command_error(self, _, error):
+        StartAI.clear_data()
+        raise error
 
     @classmethod
     def get_data(cls):
