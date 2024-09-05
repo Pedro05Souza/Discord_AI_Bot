@@ -17,8 +17,8 @@ async def on_bot_start_command(ctx: Context) -> None:
             try:
                 dict_users = await parse_ai_response(response)
                 await generate_ai_actions(dict_users, ctx)
-            except Exception as e:
-                raise AIParseError(f"Error parsing AI response: {e}")
+            except Exception:
+                pass
             StartAI.clear_data()
 
 def generate_ai_response(message_data: dict) -> str:
@@ -36,7 +36,7 @@ def generate_ai_response(message_data: dict) -> str:
             " Example: 668666843900149791: 5\n 856676215007346730: 3. Always follow this format. [USER_ID: NUMBER]"},
             {"role": "user", "content": message_data}
         ],
-        temperature=0.2,
+        temperature=0.1,
         max_tokens=max_tokens,
         )
         return completion.choices[0].message.content
